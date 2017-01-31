@@ -1,4 +1,6 @@
+import cv2
 import matplotlib.pyplot as plt
+from image_correction import LEFT_BOTTOM, LEFT_TOP, RIGHT_BOTTOM, RIGHT_TOP, LEFT_TOP_WARPED, RIGHT_TOP_WARPED
 
 
 def save_image(image1, image2, save, gray=False):
@@ -16,5 +18,20 @@ def save_image(image1, image2, save, gray=False):
     if save:
         plt.savefig(save)
         plt.close(f)
+
+
+def draw_lines(image, warped=False):
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    if warped:
+        left_top = LEFT_TOP_WARPED
+        right_top = RIGHT_TOP_WARPED
     else:
-        plt.show()
+        left_top = LEFT_TOP
+        right_top = RIGHT_TOP
+
+    cv2.line(image, LEFT_BOTTOM, left_top, (255, 0, 0), 3)
+    cv2.line(image, RIGHT_BOTTOM, right_top, (255, 0, 0), 3)
+    cv2.line(image, LEFT_BOTTOM, RIGHT_BOTTOM, (255, 0, 0), 3)
+    cv2.line(image, left_top, right_top, (255, 0, 0), 3)
+
+    return image
