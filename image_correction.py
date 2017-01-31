@@ -30,8 +30,8 @@ def camera_calibration(img, objpoints, imgpoints):
     :param imgpoints: 2d points in image plane
     :return:          tuple of camera matrix and distortion coefficients
     """
-
-    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, img.shape[::-1], None, None)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 
     return mtx, dist
 
