@@ -71,16 +71,15 @@ def __dir_threshold(img, sobel_kernel=15, thresh=(0.7, 1.3)):
     return binary_output
 
 
-def transform_image(img, s_thresh=(200, 255), sx_thresh=(20, 60)):
+def transform_image(input_image, s_thresh=(175, 255)):
     """
                       Applies transformation pipeline to the initial image
 
-    :param img:       image to apply transformation pipeline
-    :param s_thresh:  threshold for s color space
-    :param sx_thresh: threshold for sobel related transformations
-    :return:          transformed image
+    :param input_image: image to apply transformation pipeline
+    :param s_thresh:    threshold for s color space
+    :return:            transformed image
     """
-    img = np.copy(img)
+    img = np.copy(input_image)
     # Convert to HSV color space and separate the V channel
     hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HLS).astype(np.float)
     l_channel = hsv[:, :, 1]
@@ -105,4 +104,4 @@ def transform_image(img, s_thresh=(200, 255), sx_thresh=(20, 60)):
 
     combined_binary = np.zeros_like(combined)
     combined_binary[(combined == 1) | (s_binary == 1)] = 1
-    return combined_binary
+    return combined_binary.astype(np.uint8)
