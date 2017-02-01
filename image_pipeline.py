@@ -9,33 +9,36 @@ from transforamtion_pipeline import transform_image
 
 from utils import save_image, draw_lines
 
-# SAVE_FILE_CALIBRATION = 'output_images/1_undistorting.png'
-# SAVE_FILE_TEST = 'output_images/2.1_undistorting_test.png'
-# SAVE_FILE_TEST2 = 'output_images/2.2_undistorting_test2.png'
-# SAVE_FILE_TEST_TRANSFORMED = 'output_images/3.1_transformed_test.png'
-# SAVE_FILE_TEST2_TRANSFORMED = 'output_images/3.2_transformed_test2.png'
-# SAVE_PERSPECTIVE_TRANSFORM_1 = 'output_images/4.1_transformed_straight_lines1.png'
-# SAVE_PERSPECTIVE_TRANSFORM_1_2 = 'output_images/4.1_canny_transformed_straight_lines1.png'
-# SAVE_PERSPECTIVE_TRANSFORM_2 = 'output_images/4.2_transformed_straight_lines2.png'
-# SAVE_PERSPECTIVE_TRANSFORM_2_2 = 'output_images/4.2_canny_transformed_straight_lines2.png'
-# SAVE_PERSPECTIVE_TRANSFORM_3 = 'output_images/4.3_transformed_test1.png'
-# SAVE_PERSPECTIVE_TRANSFORM_3_2 = 'output_images/4.3_canny_transformed_test1.png'
-# SAVE_PERSPECTIVE_TRANSFORM_4 = 'output_images/4.4_transformed_test5.png'
-# SAVE_PERSPECTIVE_TRANSFORM_4_2 = 'output_images/4.4_canny_transformed_test5.png'
+SAVE = True
 
-SAVE_FILE_CALIBRATION = False
-SAVE_FILE_TEST = False
-SAVE_FILE_TEST2 = False
-SAVE_FILE_TEST_TRANSFORMED = False
-SAVE_FILE_TEST2_TRANSFORMED = False
-SAVE_PERSPECTIVE_TRANSFORM_1 = False
-SAVE_PERSPECTIVE_TRANSFORM_1_2 = False
-SAVE_PERSPECTIVE_TRANSFORM_2 = False
-SAVE_PERSPECTIVE_TRANSFORM_2_2 = False
-SAVE_PERSPECTIVE_TRANSFORM_3 = False
-SAVE_PERSPECTIVE_TRANSFORM_3_2 = False
-SAVE_PERSPECTIVE_TRANSFORM_4 = False
-SAVE_PERSPECTIVE_TRANSFORM_4_2 = False
+if SAVE:
+    SAVE_FILE_CALIBRATION = 'output_images/1_undistorting.png'
+    SAVE_FILE_TEST = 'output_images/2.1_undistorting_test.png'
+    SAVE_FILE_TEST2 = 'output_images/2.2_undistorting_test2.png'
+    SAVE_FILE_TEST_TRANSFORMED = 'output_images/3.1_transformed_test.png'
+    SAVE_FILE_TEST2_TRANSFORMED = 'output_images/3.2_transformed_test2.png'
+    SAVE_PERSPECTIVE_TRANSFORM_1 = 'output_images/4.1_transformed_straight_lines1.png'
+    SAVE_PERSPECTIVE_TRANSFORM_1_2 = 'output_images/4.1_canny_transformed_straight_lines1.png'
+    SAVE_PERSPECTIVE_TRANSFORM_2 = 'output_images/4.2_transformed_straight_lines2.png'
+    SAVE_PERSPECTIVE_TRANSFORM_2_2 = 'output_images/4.2_canny_transformed_straight_lines2.png'
+    SAVE_PERSPECTIVE_TRANSFORM_3 = 'output_images/4.3_transformed_test1.png'
+    SAVE_PERSPECTIVE_TRANSFORM_3_2 = 'output_images/4.3_canny_transformed_test1.png'
+    SAVE_PERSPECTIVE_TRANSFORM_4 = 'output_images/4.4_transformed_test5.png'
+    SAVE_PERSPECTIVE_TRANSFORM_4_2 = 'output_images/4.4_canny_transformed_test5.png'
+else:
+    SAVE_FILE_CALIBRATION = False
+    SAVE_FILE_TEST = False
+    SAVE_FILE_TEST2 = False
+    SAVE_FILE_TEST_TRANSFORMED = False
+    SAVE_FILE_TEST2_TRANSFORMED = False
+    SAVE_PERSPECTIVE_TRANSFORM_1 = False
+    SAVE_PERSPECTIVE_TRANSFORM_1_2 = False
+    SAVE_PERSPECTIVE_TRANSFORM_2 = False
+    SAVE_PERSPECTIVE_TRANSFORM_2_2 = False
+    SAVE_PERSPECTIVE_TRANSFORM_3 = False
+    SAVE_PERSPECTIVE_TRANSFORM_3_2 = False
+    SAVE_PERSPECTIVE_TRANSFORM_4 = False
+    SAVE_PERSPECTIVE_TRANSFORM_4_2 = False
 
 
 def generate_corners():

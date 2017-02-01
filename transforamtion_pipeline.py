@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 
-def __abs_sobel_thresh(img, orient='x', sobel_kernel=3, thresh=(20, 80)):
+def __abs_sobel_thresh(img, orient='x', sobel_kernel=3, thresh=(30, 150)):
     """
                          Performs sobel transform of the image
 
@@ -27,7 +27,7 @@ def __abs_sobel_thresh(img, orient='x', sobel_kernel=3, thresh=(20, 80)):
     return mask_binary
 
 
-def __mag_thresh(img, sobel_kernel=3, mag_thresh=(30, 100)):
+def __mag_thresh(img, sobel_kernel=3, mag_thresh=(40, 100)):
     """
                          Performs sobel magnitude transform
 
@@ -71,7 +71,7 @@ def __dir_threshold(img, sobel_kernel=15, thresh=(0.7, 1.3)):
     return binary_output
 
 
-def transform_image(img, s_thresh=(180, 240), sx_thresh=(20, 60)):
+def transform_image(img, s_thresh=(200, 255), sx_thresh=(20, 60)):
     """
                       Applies transformation pipeline to the initial image
 
