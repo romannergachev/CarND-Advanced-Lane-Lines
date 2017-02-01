@@ -14,16 +14,24 @@ from utils import save_image, draw_lines
 # SAVE_FILE_TEST2 = 'output_images/2.2_undistorting_test2.png'
 # SAVE_FILE_TEST_TRANSFORMED = 'output_images/3.1_transformed_test.png'
 # SAVE_FILE_TEST2_TRANSFORMED = 'output_images/3.2_transformed_test2.png'
-SAVE_PERSPECTIVE_TRANSFORM_1 = 'output_images/4.1_transformed_straight_lines1.png'
-SAVE_PERSPECTIVE_TRANSFORM_2 = 'output_images/4.2_transformed_straight_lines2.png'
+# SAVE_PERSPECTIVE_TRANSFORM_1 = 'output_images/4.1_transformed_straight_lines1.png'
+# SAVE_PERSPECTIVE_TRANSFORM_1_2 = 'output_images/4.1_canny_transformed_straight_lines1.png'
+# SAVE_PERSPECTIVE_TRANSFORM_2 = 'output_images/4.2_transformed_straight_lines2.png'
+# SAVE_PERSPECTIVE_TRANSFORM_2_2 = 'output_images/4.2_canny_transformed_straight_lines2.png'
+# SAVE_PERSPECTIVE_TRANSFORM_3 = 'output_images/4.3_transformed_test1.png'
+# SAVE_PERSPECTIVE_TRANSFORM_3_2 = 'output_images/4.3_canny_transformed_test1.png'
+# SAVE_PERSPECTIVE_TRANSFORM_4 = 'output_images/4.4_transformed_test5.png'
+# SAVE_PERSPECTIVE_TRANSFORM_4_2 = 'output_images/4.4_canny_transformed_test5.png'
 
 SAVE_FILE_CALIBRATION = False
 SAVE_FILE_TEST = False
 SAVE_FILE_TEST2 = False
 SAVE_FILE_TEST_TRANSFORMED = False
 SAVE_FILE_TEST2_TRANSFORMED = False
-# SAVE_PERSPECTIVE_TRANSFORM_1 = False
-# SAVE_PERSPECTIVE_TRANSFORM_2 = False
+SAVE_PERSPECTIVE_TRANSFORM_1 = False
+SAVE_PERSPECTIVE_TRANSFORM_2 = False
+SAVE_PERSPECTIVE_TRANSFORM_3 = False
+SAVE_PERSPECTIVE_TRANSFORM_4 = False
 
 
 def generate_corners():
@@ -65,7 +73,7 @@ def calibrate_image(objpoints, imgpoints):
 
 
 def undistort_test_images(name, save, save_transformed, mtx, dist):
-    test_image = cv2.imread(name)
+    test_image = cv2.imread('test_images/' + name)
     undistorted_test_image = undistort_image(test_image, mtx, dist)
 
     test_image = cv2.cvtColor(test_image, cv2.COLOR_BGR2RGB)
@@ -76,25 +84,34 @@ def undistort_test_images(name, save, save_transformed, mtx, dist):
     save_image(undistorted_test_image, transformed_test, save_transformed, True)
 
 
-def perspective_transform(name, save, mtx, dist):
-    img = cv2.imread(name)
+def perspective_transform(name, save, save_transformed, mtx, dist):
+    img = cv2.imread('test_images/' + name)
     undistorted_img = undistort_image(img, mtx, dist)
     warped = warp(undistorted_img)
+
+    undistorted_img = cv2.cvtColor(undistorted_img, cv2.COLOR_BGR2RGB)
+    warped = cv2.cvtColor(warped, cv2.COLOR_BGR2RGB)
+
+    transformed = transform_image(undistorted_img)
+    transformed_warped = warp(transformed)
 
     undistorted_img = draw_lines(undistorted_img)
     warped = draw_lines(warped, True)
 
-    save_image(undistorted_img, warped, save)
+    # transformed = draw_lines(transformed)
+    # transformed_warped = draw_lines(transformed_warped, True)
 
+    save_image(undistorted_img, warped, save)
+    save_image(transformed, transformed_warped, save_transformed, True, True)
 
 
 objpts, imgpts = generate_corners()
 
 matrix, distortions = calibrate_image(objpts, imgpts)
 
-undistort_test_images('test_images/test1.jpg', SAVE_FILE_TEST, SAVE_FILE_TEST_TRANSFORMED, matrix, distortions)
-undistort_test_images('test_images/signs.png', SAVE_FILE_TEST2, SAVE_FILE_TEST2_TRANSFORMED, matrix, distortions)
+undistort_test_images('test1.jpg', SAVE_FILE_TEST, SAVE_FILE_TEST_TRANSFORMED, matrix, distortions)
 
-perspective_transform('test_images/straight_lines2.jpg', SAVE_PERSPECTIVE_TRANSFORM_2, matrix, distortions)
-perspective_transform('test_images/straight_lines1.jpg', SAVE_PERSPECTIVE_TRANSFORM_1, matrix, distortions)
-
+perspective_transform('strt1.jpg', SAVE_PERSPECTIVE_TRANSFORM_2, SAVE_PERSPECTIVE_TRANSFORM_2_2, matrix, distortions)
+perspective_transform('strt2.jpg', SAVE_PERSPECTIVE_TRANSFORM_1, SAVE_PERSPECTIVE_TRANSFORM_1_2, matrix, distortions)
+perspective_transform('test1.jpg', SAVE_PERSPECTIVE_TRANSFORM_3, SAVE_PERSPECTIVE_TRANSFORM_3_2, matrix, distortions)
+perspective_transform('test5.jpg', SAVE_PERSPECTIVE_TRANSFORM_4, SAVE_PERSPECTIVE_TRANSFORM_4_2, matrix, distortions)

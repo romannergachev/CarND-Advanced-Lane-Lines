@@ -3,10 +3,14 @@ import matplotlib.pyplot as plt
 from image_correction import LEFT_BOTTOM, LEFT_TOP, RIGHT_BOTTOM, RIGHT_TOP, LEFT_TOP_WARPED, RIGHT_TOP_WARPED
 
 
-def save_image(image1, image2, save, gray=False):
+def save_image(image1, image2, save, gray=False, gray2=False):
     f, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 9))
     f.tight_layout()
-    ax1.imshow(image1)
+    if gray2:
+        ax1.imshow(image1, cmap='gray')
+    else:
+        ax1.imshow(image1)
+
     ax1.set_title('Original Image', fontsize=50)
     if gray:
         ax2.imshow(image2, cmap='gray')
@@ -21,7 +25,6 @@ def save_image(image1, image2, save, gray=False):
 
 
 def draw_lines(image, warped=False):
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     if warped:
         left_top = LEFT_TOP_WARPED
         right_top = RIGHT_TOP_WARPED
