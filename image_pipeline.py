@@ -10,45 +10,6 @@ import matplotlib.pyplot as plt
 
 from utils import save_image, draw_lines
 
-SAVE = True
-
-if SAVE:
-    SAVE_FILE_CALIBRATION = 'output_images/1_undistorting.png'
-    SAVE_FILE_TEST = 'output_images/2.1_undistorting_test.png'
-    SAVE_FILE_TEST2 = 'output_images/2.2_undistorting_test2.png'
-    SAVE_FILE_TEST_TRANSFORMED = 'output_images/3.1_transformed_test.png'
-    SAVE_FILE_TEST2_TRANSFORMED = 'output_images/3.2_transformed_test2.png'
-    SAVE_PERSPECTIVE_TRANSFORM_1 = 'output_images/4.1_transformed_straight_lines1.png'
-    SAVE_PERSPECTIVE_TRANSFORM_1_2 = 'output_images/4.1_canny_transformed_straight_lines1.png'
-    SAVE_PERSPECTIVE_TRANSFORM_2 = 'output_images/4.2_transformed_straight_lines2.png'
-    SAVE_PERSPECTIVE_TRANSFORM_2_2 = 'output_images/4.2_canny_transformed_straight_lines2.png'
-    SAVE_PERSPECTIVE_TRANSFORM_3 = 'output_images/4.3_transformed_test1.png'
-    SAVE_PERSPECTIVE_TRANSFORM_3_2 = 'output_images/4.3_canny_transformed_test1.png'
-    SAVE_PERSPECTIVE_TRANSFORM_4 = 'output_images/4.4_transformed_test5.png'
-    SAVE_PERSPECTIVE_TRANSFORM_4_2 = 'output_images/4.4_canny_transformed_test5.png'
-    SAVE_LANE_LINES_1 = 'output_images/5.1_draw_lanes.png'
-    SAVE_LANE_LINES_2 = 'output_images/5.2_draw_lanes.png'
-    SAVE_LANE_LINES_3 = 'output_images/5.3_draw_lanes.png'
-    SAVE_LANE_LINES_4 = 'output_images/5.4_draw_lanes.png'
-else:
-    SAVE_FILE_CALIBRATION = False
-    SAVE_FILE_TEST = False
-    SAVE_FILE_TEST2 = False
-    SAVE_FILE_TEST_TRANSFORMED = False
-    SAVE_FILE_TEST2_TRANSFORMED = False
-    SAVE_PERSPECTIVE_TRANSFORM_1 = False
-    SAVE_PERSPECTIVE_TRANSFORM_1_2 = False
-    SAVE_PERSPECTIVE_TRANSFORM_2 = False
-    SAVE_PERSPECTIVE_TRANSFORM_2_2 = False
-    SAVE_PERSPECTIVE_TRANSFORM_3 = False
-    SAVE_PERSPECTIVE_TRANSFORM_3_2 = False
-    SAVE_PERSPECTIVE_TRANSFORM_4 = False
-    SAVE_PERSPECTIVE_TRANSFORM_4_2 = False
-    SAVE_LANE_LINES_1 = False
-    SAVE_LANE_LINES_2 = False
-    SAVE_LANE_LINES_3 = False
-    SAVE_LANE_LINES_4 = False
-
 
 def generate_corners():
     NX = 9
@@ -82,47 +43,28 @@ def generate_corners():
 def calibrate_image(objpoints, imgpoints):
     calibration_image = cv2.imread('camera_cal/calibration1.jpg')
     mtx, dist = camera_calibration(calibration_image, objpoints, imgpoints)
-    undistorted_calibration_image = undistort_image(calibration_image, mtx, dist)
-    save_image(calibration_image, undistorted_calibration_image, SAVE_FILE_CALIBRATION)
 
     return mtx, dist
 
 
-def undistort_test_images(name, save, save_transformed, mtx, dist):
-    test_image = cv2.imread('test_images/' + name)
-    undistorted_test_image = undistort_image(test_image, mtx, dist)
-
-    test_image = cv2.cvtColor(test_image, cv2.COLOR_BGR2RGB)
-    undistorted_test_image = cv2.cvtColor(undistorted_test_image, cv2.COLOR_BGR2RGB)
-    save_image(test_image, undistorted_test_image, save)
-
-    transformed_test = transform_image(undistorted_test_image)
-    save_image(undistorted_test_image, transformed_test, save_transformed, True)
-
-
-def perspective_transform(name, save, save_transformed, mtx, dist):
+def detection_pipeline(name, mtx, dist):
     img = cv2.imread('test_images/' + name)
+    temp = img.copy()
     undistorted_img = undistort_image(img, mtx, dist)
-    warped = warp(undistorted_img)
 
     undistorted_img = cv2.cvtColor(undistorted_img, cv2.COLOR_BGR2RGB)
-    warped = cv2.cvtColor(warped, cv2.COLOR_BGR2RGB)
 
     transformed = transform_image(undistorted_img)
     transformed_warped = warp(transformed)
 
-    undistorted_img = draw_lines(undistorted_img)
-    warped = draw_lines(warped, True)
-
-    # transformed = draw_lines(transformed)
-    # transformed_warped = draw_lines(transformed_warped, True)
-
-    save_image(undistorted_img, warped, save)
-    save_image(transformed, transformed_warped, save_transformed, True, True)
-    return transformed_warped
+    detected = detect_line(transformed_warped)
+    warped_back = warp(detected, True)
+    masked_image = cv2.addWeighted(temp, 1, warped_back, 0.4, 0)
+    cv2.imwrite('output_images/9_masked_image.png', masked_image)
+    return masked_image
 
 
-def detect_line(binary_warped, save_file):
+def detect_line(binary_warped):
     # Assuming you have created a warped binary image called "binary_warped"
     # Take a histogram of the bottom half of the image
     binary_warped = binary_warped.astype(np.uint8)
@@ -194,38 +136,53 @@ def detect_line(binary_warped, save_file):
     left_fit = np.polyfit(lefty, leftx, 2)
     right_fit = np.polyfit(righty, rightx, 2)
 
-    # cv2.imwrite('output_images/5_draw_lanes.png', out_img)
-    # save_image(out_img, transformed_warped, save_transformed, True, True)
-
-
-
     # Generate x and y values for plotting
     ploty = np.linspace(0, binary_warped.shape[0] - 1, binary_warped.shape[0])
     left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
     right_fitx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
 
-    out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
-    out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
-    plt.imshow(out_img)
-    plt.plot(left_fitx, ploty, color='yellow')
-    plt.plot(right_fitx, ploty, color='yellow')
-    plt.xlim(0, 1280)
-    plt.ylim(720, 0)
-    plt.savefig(save_file)
-    plt.close()
+    pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
+    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
+    pts = np.hstack((pts_left, pts_right))
+
+    zeros = np.zeros_like(out_img).astype(np.uint8)
+
+    cv2.polylines(zeros, np.int_([pts_left]), False, (0, 0, 255), thickness=30)
+    cv2.polylines(zeros, np.int_([pts_right]), False, (255, 0, 0), thickness=30)
+    cv2.fillPoly(zeros, np.int_([pts]), (0, 255, 0))
+
+    return zeros
+
+
+def detect_lines2(binary_warped):
+    # Assume you now have a new warped binary image
+    # from the next frame of video (also called "binary_warped")
+    # It's now much easier to find line pixels!
+    nonzero = binary_warped.nonzero()
+    nonzeroy = np.array(nonzero[0])
+    nonzerox = np.array(nonzero[1])
+    margin = 100
+    left_lane_inds = ((nonzerox > (left_fit[0] * (nonzeroy ** 2) + left_fit[1] * nonzeroy + left_fit[2] - margin)) & (
+    nonzerox < (left_fit[0] * (nonzeroy ** 2) + left_fit[1] * nonzeroy + left_fit[2] + margin)))
+    right_lane_inds = (
+    (nonzerox > (right_fit[0] * (nonzeroy ** 2) + right_fit[1] * nonzeroy + right_fit[2] - margin)) & (
+    nonzerox < (right_fit[0] * (nonzeroy ** 2) + right_fit[1] * nonzeroy + right_fit[2] + margin)))
+
+    # Again, extract left and right line pixel positions
+    leftx = nonzerox[left_lane_inds]
+    lefty = nonzeroy[left_lane_inds]
+    rightx = nonzerox[right_lane_inds]
+    righty = nonzeroy[right_lane_inds]
+    # Fit a second order polynomial to each
+    left_fit = np.polyfit(lefty, leftx, 2)
+    right_fit = np.polyfit(righty, rightx, 2)
+    # Generate x and y values for plotting
+    ploty = np.linspace(0, binary_warped.shape[0] - 1, binary_warped.shape[0])
+    left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
+    right_fitx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
 
 
 objpts, imgpts = generate_corners()
 
 matrix, distortions = calibrate_image(objpts, imgpts)
-
-undistort_test_images('test1.jpg', SAVE_FILE_TEST, SAVE_FILE_TEST_TRANSFORMED, matrix, distortions)
-
-persp = perspective_transform('strt1.jpg', SAVE_PERSPECTIVE_TRANSFORM_2, SAVE_PERSPECTIVE_TRANSFORM_2_2, matrix, distortions)
-detect_line(persp, SAVE_LANE_LINES_2)
-persp = perspective_transform('strt2.jpg', SAVE_PERSPECTIVE_TRANSFORM_1, SAVE_PERSPECTIVE_TRANSFORM_1_2, matrix, distortions)
-detect_line(persp, SAVE_LANE_LINES_1)
-persp = perspective_transform('test1.jpg', SAVE_PERSPECTIVE_TRANSFORM_3, SAVE_PERSPECTIVE_TRANSFORM_3_2, matrix, distortions)
-detect_line(persp, SAVE_LANE_LINES_3)
-persp = perspective_transform('test5.jpg', SAVE_PERSPECTIVE_TRANSFORM_4, SAVE_PERSPECTIVE_TRANSFORM_4_2, matrix, distortions)
-detect_line(persp, SAVE_LANE_LINES_4)
+persp = detection_pipeline('test5.jpg', matrix, distortions)
