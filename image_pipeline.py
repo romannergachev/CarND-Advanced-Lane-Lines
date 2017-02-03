@@ -2,7 +2,7 @@ import cv2
 from image_correction import generate_corners, calibrate_image
 from image_correction import undistort_image
 from image_correction import warp
-from lane_detection import detect_line
+from lane import detect_line
 from transforamtion_pipeline import transform_image
 
 
