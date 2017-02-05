@@ -1,7 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
-from image_correction import LEFT_BOTTOM, LEFT_TOP, RIGHT_BOTTOM, RIGHT_TOP, LEFT_TOP_WARPED, RIGHT_TOP_WARPED, \
-    LEFT_BOTTOM_WARPED, RIGHT_BOTTOM_WARPED
+from camera import LEFT_TOP_WARPED, LEFT_BOTTOM_WARPED, RIGHT_TOP_WARPED, RIGHT_BOTTOM_WARPED, LEFT_TOP, LEFT_BOTTOM, \
+    RIGHT_TOP, RIGHT_BOTTOM
 
 
 def save_image(image1, image2, save, gray=False, gray2=False):
