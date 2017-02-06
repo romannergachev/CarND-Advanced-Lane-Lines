@@ -51,8 +51,8 @@ class Lane:
         self.y = np.linspace(0, self.shape - 1, self.shape)
         self.out = None
         # number of images for average
-        self.n = 5
-        self.n_skip = 20
+        self.n = 10
+        self.n_skip = 10
         # Set minimum number of pixels found to recenter window
         self.minpix = 50
         self.width = 0
@@ -219,19 +219,14 @@ class Lane:
             line.radius_of_curvature = curvature
             return True
 
-        if (not (left_curverad - self.detection_margin < right_curverad < left_curverad + self.detection_margin)) and (curvature < 1500):
-            print("Fall back curv")
-            self.fall_back(line)
-            return False
-
-        if np.linalg.norm(line.diffs) > self.detection_margin:
+        if np.linalg.norm(line.diffs) > self.detection_margin * 2:
             print("Fall back coeffs")
             self.fall_back(line)
             return False
 
         difference = self.rightLine.position - self.leftLine.position
 
-        if not (self.width - self.detection_margin < difference < self.width + self.detection_margin):
+        if not (self.width - self.detection_margin * 2 < difference < self.width + self.detection_margin * 2):
             print("Fall back width")
             self.fall_back(line)
             return False
