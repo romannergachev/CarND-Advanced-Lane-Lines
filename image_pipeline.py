@@ -40,12 +40,12 @@ def detection_pipeline(img):
     dist_text = "Dist from Center: {0:.2f} cms".format(dist_from_center)
     cv2.putText(masked_image, dist_text, (450, 50), font, 1, (255, 255, 255), 2)
 
-    # cv2.imwrite('test/TEST' + str(lane.frame) + '.png', masked_image)
+    # cv2.imwrite('to_test/TTTEST.png', masked_image)
     return masked_image
 
 lane = Lane()
 camera = Camera()
-test_image = cv2.imread('test_images/' + 'test5.jpg')
+test_image = cv2.imread('to_test/' + 'TEST570.png')
 # persp = detection_pipeline(test_image)
 # persp = detection_pipeline(test_image)
 # persp = detection_pipeline(test_image)

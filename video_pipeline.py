@@ -3,7 +3,6 @@ import imageio
 from camera import Camera
 from lane import Lane
 from image_pipeline import detection_pipeline
-import numpy as np
 
 imageio.plugins.ffmpeg.download()
 camera = Camera()
