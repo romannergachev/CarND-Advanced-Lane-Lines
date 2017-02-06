@@ -71,7 +71,7 @@ def __dir_threshold(img, sobel_kernel=15, thresh=(0.7, 1.3)):
     return binary_output
 
 
-def transform_image(input_image, s_thresh=(150, 255)):
+def transform_image(input_image, s_thresh=(100, 255)):
     """
                       Applies transformation pipeline to the initial image
 
