@@ -104,4 +104,39 @@ def transform_image(input_image, s_thresh=(175, 255)):
 
     combined_binary = np.zeros_like(combined)
     combined_binary[(combined == 1) | (s_binary == 1)] = 1
-    return combined_binary.astype(np.uint8)
+    binary = combined_binary.astype(np.uint8)
+    return region_of_interest(binary, mask_vertices(binary))
+
+
+def mask_vertices(image):
+    """Applies mask over image"""
+    size = image.shape
+    LEFT_BOTTOM = (145, 720)
+    LEFT_TOP = (500, 447)
+    RIGHT_TOP = (783, 447)
+    RIGHT_BOTTOM = (1178, 720)
+
+    vertices2 = np.array([[(145, 720), (500, 347),
+                           (783, 347),
+                           (1178, 720)]], dtype=np.int32)
+    return vertices2
+
+
+def region_of_interest(img, vertices):
+    """Applies an image mask formed by the vertices."""
+    # defining a blank mask to start with
+    mask = np.zeros_like(img)
+
+    # defining a 3 channel or 1 channel color to fill the mask with depending on the input image
+    if len(img.shape) > 2:
+        channel_count = img.shape[2]  # i.e. 3 or 4 depending on your image
+        ignore_mask_color = (255,) * channel_count
+    else:
+        ignore_mask_color = 255
+
+    # filling pixels inside the polygon defined by "vertices" with the fill color
+    cv2.fillPoly(mask, vertices, ignore_mask_color)
+
+    # returning the image only where mask pixels are nonzero
+    masked_image = cv2.bitwise_and(img, mask)
+    return masked_image

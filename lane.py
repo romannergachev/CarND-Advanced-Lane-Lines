@@ -13,6 +13,8 @@ class Line:
     def __init__(self):
         # was the line detected in the last iteration?
         self.detected = False
+        # x values of the current fit of the line
+        self.current_xfitted = None
         # x values of the last n fits of the line
         self.recent_xfitted = []
         # average x values of the fitted line over the last n iterations
@@ -36,6 +38,7 @@ class Line:
         self.ally = None
         self.prev_y = None
         self.position = None
+        self.prev_position = None
         self.detection_counter = 0
 
 
@@ -49,25 +52,40 @@ class Lane:
         self.out = None
         # number of images for average
         self.n = 5
+        self.n_skip = 20
         # Set minimum number of pixels found to recenter window
         self.minpix = 50
+        self.width = 0
+        self.frame = 0
 
     def detect_lane(self, binary_warped):
         binary_warped = binary_warped.astype(np.uint8)
         out_img = np.dstack((binary_warped, binary_warped, binary_warped)) * 255
         self.out = np.zeros_like(out_img).astype(np.uint8)
 
-        if self.leftLine.detection_counter <= self.n and self.leftLine.recent_xfitted:
+        self.frame += 1
+
+        if self.leftLine.detection_counter <= self.n_skip and self.leftLine.recent_xfitted:
+            init_left = False
             self.continuously_detect(binary_warped)
         else:
+            init_left = True
             self.initial_detect_line(binary_warped)
 
-        if self.rightLine.detection_counter <= self.n and self.rightLine.recent_xfitted:
+        if self.rightLine.detection_counter <= self.n_skip and self.rightLine.recent_xfitted:
+            init_right = False
             self.continuously_detect(binary_warped, False)
         else:
+            init_right = True
             self.initial_detect_line(binary_warped, False)
 
-        self.calculate_curvature()
+        if self.frame == 1:
+            self.width = self.rightLine.position - self.leftLine.position
+
+        left_curverad, right_curverad = self.calculate_curvature()
+
+        self.check_line(self.leftLine, init_left, left_curverad)
+        self.check_line(self.rightLine, init_right, right_curverad)
 
         self.draw_lane()
 
@@ -128,9 +146,13 @@ class Lane:
 
         fitx = fit[0] * self.y ** 2 + fit[1] * self.y + fit[2]
 
+        base_x = fit[0] * (self.shape - 1) ** 2 + fit[1] * (self.shape - 1) + fit[2]
+
         line.recent_xfitted = []
+        line.position = base_x
         line.recent_xfitted.append(fitx)
         line.bestx = fitx
+        line.current_xfitted = fitx
         line.detected = True
         line.recent_fit = []
         line.recent_fit.append(fit)
@@ -165,17 +187,17 @@ class Lane:
         # Generate x and y values for plotting
         fitx = fit[0] * self.y ** 2 + fit[1] * self.y + fit[2]
 
-        line.recent_xfitted.append(fitx)
-        line.bestx = np.mean(line.recent_xfitted[-self.n:], axis=0)
-        line.detected = True
+        base_x = fit[0] * (self.shape - 1) ** 2 + fit[1] * (self.shape - 1) + fit[2]
+
+        line.current_xfitted = fitx
         line.current_fit = fit
-        line.recent_fit.append(fit)
-        line.best_fit = np.mean(line.recent_fit[-self.n:], axis=0)
-        line.diffs = np.array([0, 0, 0], dtype='float')
+        line.diffs = np.absolute(np.subtract(line.best_fit, fit))
+        line.prev_x = line.allx
+        line.prev_y = line.ally
         line.allx = x
         line.ally = y
-
-        line.detection_counter = 0
+        line.prev_position = line.position
+        line.position = base_x
 
     def calculate_curvature(self):
         y_eval_left = np.max(self.leftLine.ally)
@@ -189,25 +211,49 @@ class Lane:
         right_curverad = ((1 + (2 * right_fit_cr[0] * y_eval_right * ym_per_pix + right_fit_cr[1]) ** 2) ** 1.5) \
             / np.absolute(2 * right_fit_cr[0])
 
-        self.leftLine.radius_of_curvature = left_curverad
-        self.rightLine.radius_of_curvature = right_curverad
-
         return left_curverad, right_curverad
 
-    def check_line(self):
+    def check_line(self, line, init, curvature):
         left_curverad, right_curverad = self.calculate_curvature()
-        if not right_curverad - self.detection_margin < left_curverad < right_curverad + self.detection_margin:
-            self.fall_back(self.leftLine)
-            self.fall_back(self.rightLine)
-            return False
-        #add checks
+        if init:
+            line.radius_of_curvature = curvature
+            return True
 
+        if (not (left_curverad - self.detection_margin < right_curverad < left_curverad + self.detection_margin)) and (curvature < 1500):
+            print("Fall back curv")
+            self.fall_back(line)
+            return False
+
+        if np.linalg.norm(line.diffs) > self.detection_margin:
+            print("Fall back coeffs")
+            self.fall_back(line)
+            return False
+
+        difference = self.rightLine.position - self.leftLine.position
+
+        if not (self.width - self.detection_margin < difference < self.width + self.detection_margin):
+            print("Fall back width")
+            self.fall_back(line)
+            return False
+
+        self.detected(line)
+        line.radius_of_curvature = curvature
 
     def fall_back(self, line):
         line.allx = line.prev_x
         line.ally = line.prev_y
         line.detected = False
-        # add more
+        line.position = line.prev_position
+        line.detection_counter += 1
+
+    def detected(self, line):
+        line.recent_xfitted.append(line.current_xfitted)
+        line.bestx = np.mean(line.recent_xfitted[-self.n:], axis=0)
+        line.detected = True
+        line.recent_fit.append(line.current_fit)
+        line.best_fit = np.mean(line.recent_fit[-self.n:], axis=0)
+        line.detection_counter = 0
+        line.position = line.best_fit[0] * (self.shape - 1) ** 2 + line.best_fit[1] * (self.shape - 1) + line.best_fit[2]
 
     def draw_lane(self):
         # Generate x and y values for plotting
