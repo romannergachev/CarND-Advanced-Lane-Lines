@@ -60,23 +60,6 @@ class Camera:
         """
         return cv2.undistort(img, self.matrix, self.distortions, None, self.matrix)
 
-    def warp(self, img, invert=False):
-        """
-                    Performs perspective transform of the image
-        :param img:    image to apply perspective transform
-        :param invert: check if warp should be inverted
-        :return:       perspective transformed image
-        """
-
-        img_size = (img.shape[1], img.shape[0])
-        if invert:
-            M = cv2.getPerspectiveTransform(self.dst, self.src)
-        else:
-            M = cv2.getPerspectiveTransform(self.src, self.dst)
-
-        warped = cv2.warpPerspective(img, M, img_size, flags=cv2.INTER_NEAREST)
-
-        return warped
 
     def generate_corners(self):
         NX = 9
@@ -111,3 +94,21 @@ class Camera:
         mtx, dist = self.camera_calibration(calibration_image)
 
         return mtx, dist
+
+    def warp(self, img, invert=False):
+        """
+                    Performs perspective transform of the image
+        :param img:    image to apply perspective transform
+        :param invert: check if warp should be inverted
+        :return:       perspective transformed image
+        """
+
+        img_size = (img.shape[1], img.shape[0])
+        if invert:
+            M = cv2.getPerspectiveTransform(self.dst, self.src)
+        else:
+            M = cv2.getPerspectiveTransform(self.src, self.dst)
+
+        warped = cv2.warpPerspective(img, M, img_size, flags=cv2.INTER_NEAREST)
+
+        return warped
