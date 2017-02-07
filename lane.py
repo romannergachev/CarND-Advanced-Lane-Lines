@@ -1,5 +1,3 @@
-# Detect lane pixels and fit to find the lane boundary.
-# Determine the curvature of the lane and vehicle position with respect to center.
 import cv2
 import numpy as np
 
@@ -10,6 +8,9 @@ xm_per_pix = 3.7 / 700
 
 
 class Line:
+    """
+    Class contains info about line
+    """
     def __init__(self):
         # was the line detected in the last iteration?
         self.detected = False
@@ -33,65 +34,102 @@ class Line:
         self.diffs = np.array([0, 0, 0], dtype='float')
         # x values for detected line pixels
         self.allx = None
+        # previous x values for detected line pixels
         self.prev_x = None
         # y values for detected line pixels
         self.ally = None
+        # previous y values for detected line pixels
         self.prev_y = None
+        # line position
         self.position = None
+        # previous line position
         self.prev_position = None
+        # number of times line was failed to detect
         self.detection_counter = 0
 
 
 class Lane:
+    """
+    Class contains info about lane and consists of two lines
+    """
     def __init__(self):
+        # height of the image
         self.shape = 720
+        # margin
         self.detection_margin = 100
+        # left line of the lane
         self.leftLine = Line()
+        # right line of the lane
         self.rightLine = Line()
+        # y linespace for fitted data
         self.y = np.linspace(0, self.shape - 1, self.shape)
+        # output image
         self.out = None
         # number of images for average
-        self.n = 10
-        self.n_skip = 10
+        self.n = 5
+        # number of failed images before starting the blind search
+        self.n_skip = 15
         # Set minimum number of pixels found to recenter window
         self.minpix = 50
+        # Width of the lane
         self.width = 0
+        # frame number
         self.frame = 0
+        # square error margin
+        self.error_margin = 2000000
 
     def detect_lane(self, binary_warped):
+        """
+                              Detects the lane on the image and returns it as a mask image
+        :param binary_warped: image to detect lane
+        :return:              empty image with drawn lane on it
+        """
         binary_warped = binary_warped.astype(np.uint8)
         out_img = np.dstack((binary_warped, binary_warped, binary_warped)) * 255
         self.out = np.zeros_like(out_img).astype(np.uint8)
 
         self.frame += 1
 
+        # left line detection
         if self.leftLine.detection_counter <= self.n_skip and self.leftLine.recent_xfitted:
+            # targeted search
             init_left = False
-            self.continuously_detect(binary_warped)
+            self.__continuously_detect(binary_warped)
         else:
+            # blind search
             init_left = True
-            self.initial_detect_line(binary_warped)
+            self.__initial_detect_line(binary_warped)
 
+        # right line detection
         if self.rightLine.detection_counter <= self.n_skip and self.rightLine.recent_xfitted:
+            # targeted search
             init_right = False
-            self.continuously_detect(binary_warped, False)
+            self.__continuously_detect(binary_warped, False)
         else:
+            # blind search
             init_right = True
-            self.initial_detect_line(binary_warped, False)
+            self.__initial_detect_line(binary_warped, False)
 
         if self.frame == 1:
             self.width = self.rightLine.position - self.leftLine.position
 
-        left_curverad, right_curverad = self.calculate_curvature()
+        # calculate curvature
+        left_curverad, right_curverad = self.__calculate_curvature()
 
-        self.check_line(self.leftLine, init_left, left_curverad)
-        self.check_line(self.rightLine, init_right, right_curverad)
+        # check lines to "look like" correct ones
+        self.__check_line(self.leftLine, init_left, left_curverad)
+        self.__check_line(self.rightLine, init_right, right_curverad)
 
-        self.draw_lane()
+        self.__draw_lane()
 
         return self.out
 
-    def initial_detect_line(self, binary_warped, is_left=True):
+    def __initial_detect_line(self, binary_warped, is_left=True):
+        """
+                              Blindly search for the lane line
+        :param binary_warped: image to find a line
+        :param is_left:       True if it is a left line
+        """
         histogram = np.sum(binary_warped[binary_warped.shape[0] / 2:, :], axis=0)
         # Find the peak of the left and right halves of the histogram
         # These will be the starting point for the left and right lines
@@ -148,6 +186,7 @@ class Lane:
 
         base_x = fit[0] * (self.shape - 1) ** 2 + fit[1] * (self.shape - 1) + fit[2]
 
+        # fill in line params
         line.recent_xfitted = []
         line.position = base_x
         line.recent_xfitted.append(fitx)
@@ -163,7 +202,12 @@ class Lane:
         line.ally = y
         line.detection_counter = 0
 
-    def continuously_detect(self, binary_warped, is_left=True):
+    def __continuously_detect(self, binary_warped, is_left=True):
+        """
+                              Targeted lane line search
+        :param binary_warped: image to find a line
+        :param is_left:       True if it is a left line
+        """
         if is_left:
             line = self.leftLine
         else:
@@ -189,6 +233,7 @@ class Lane:
 
         base_x = fit[0] * (self.shape - 1) ** 2 + fit[1] * (self.shape - 1) + fit[2]
 
+        # fill in line params
         line.current_xfitted = fitx
         line.current_fit = fit
         line.diffs = np.absolute(np.subtract(line.best_fit, fit))
@@ -199,7 +244,11 @@ class Lane:
         line.prev_position = line.position
         line.position = base_x
 
-    def calculate_curvature(self):
+    def __calculate_curvature(self):
+        """
+                 Calculates curvature of the lines
+        :return: left and right lines curvature
+        """
         y_eval_left = np.max(self.leftLine.ally)
         y_eval_right = np.max(self.rightLine.ally)
         # allx for right and left lines should be averaged (best coeffs)
@@ -213,35 +262,56 @@ class Lane:
 
         return left_curverad, right_curverad
 
-    def check_line(self, line, init, curvature):
-        left_curverad, right_curverad = self.calculate_curvature()
+    def __check_line(self, line, init, curvature):
+        """
+                          Checks the line to be correct
+        :param line:      line to check
+        :param init:      True if it is init step
+        :param curvature: lines' curvature
+        :return:          True if line is confirmed
+        """
         if init:
             line.radius_of_curvature = curvature
             return True
 
-        if np.linalg.norm(line.diffs) > self.detection_margin * 2:
+        # coefficients check
+        coeffs_difference = line.best_fit - line.current_fit
+        delta = coeffs_difference[0] * self.y ** 2 + coeffs_difference[1] * self.y + coeffs_difference[2]
+        squared_error = np.sum(np.power(delta, 2))
+
+        if squared_error > self.error_margin:
             print("Fall back coeffs")
-            self.fall_back(line)
+            self.__fall_back(line)
             return False
 
+        # lane width check
         difference = self.rightLine.position - self.leftLine.position
-
         if not (self.width - self.detection_margin * 2 < difference < self.width + self.detection_margin * 2):
             print("Fall back width")
-            self.fall_back(line)
+            self.__fall_back(line)
             return False
 
-        self.detected(line)
+        self.__detected(line)
         line.radius_of_curvature = curvature
 
-    def fall_back(self, line):
+        return True
+
+    def __fall_back(self, line):
+        """
+                     Falls back to the previous detected line data
+        :param line: left or right line
+        """
         line.allx = line.prev_x
         line.ally = line.prev_y
         line.detected = False
         line.position = line.prev_position
         line.detection_counter += 1
 
-    def detected(self, line):
+    def __detected(self, line):
+        """
+                     Update the recognized line data
+        :param line: left or right line
+        """
         line.recent_xfitted.append(line.current_xfitted)
         line.bestx = np.mean(line.recent_xfitted[-self.n:], axis=0)
         line.detected = True
@@ -250,8 +320,10 @@ class Lane:
         line.detection_counter = 0
         line.position = line.best_fit[0] * (self.shape - 1) ** 2 + line.best_fit[1] * (self.shape - 1) + line.best_fit[2]
 
-    def draw_lane(self):
-        # Generate x and y values for plotting
+    def __draw_lane(self):
+        """
+                Draws lane
+        """
         left_fitx = self.leftLine.best_fit[0] * self.y ** 2 + self.leftLine.best_fit[1] * self.y + \
                     self.leftLine.best_fit[2]
         right_fitx = self.rightLine.best_fit[0] * self.y ** 2 + self.rightLine.best_fit[1] * self.y + \
@@ -264,3 +336,32 @@ class Lane:
         cv2.polylines(self.out, np.int_([pts_left]), False, (0, 0, 255), thickness=30)
         cv2.polylines(self.out, np.int_([pts_right]), False, (255, 0, 0), thickness=30)
         cv2.fillPoly(self.out, np.int_([pts]), (0, 255, 0))
+
+    def add_info(self, masked_image):
+        """
+                             Draws radius, position for each line and cars' location on the lane
+        :param masked_image: image to draw the info on
+        :return:             updated image
+        """
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        left_radius = "Left R = {0:.1f}m".format(self.leftLine.radius_of_curvature)
+        cv2.putText(masked_image, left_radius, (20, 640), font, 1, (255, 255, 255), 2)
+        right_radius = "Right R = {0:.1f}m".format(self.rightLine.radius_of_curvature)
+        cv2.putText(masked_image, right_radius, (950, 640), font, 1, (255, 255, 255), 2)
+
+        # Write the x coords for each lane
+        left_line_position = "X = {0:.1f}".format(self.leftLine.position)
+        cv2.putText(masked_image, left_line_position, (20, 680), font, 1, (255, 255, 255), 2)
+        right_line_position = "X = {0:.1f}".format(self.rightLine.position)
+        cv2.putText(masked_image, right_line_position, (950, 680), font, 1, (255, 255, 255), 2)
+
+        # Write dist from center
+        center = 1280 / 2.
+        lane_width = self.rightLine.position - self.leftLine.position
+        center_x = lane_width / 2.0 + self.leftLine.position
+        cms_per_pixel = 370.0 / lane_width
+        dist_from_center = (center_x - center) * cms_per_pixel / 100
+        dist_text = "Distance from Center = {0:.1f}m".format(dist_from_center)
+        cv2.putText(masked_image, dist_text, (450, 50), font, 1, (255, 255, 255), 2)
+
+        return masked_image
