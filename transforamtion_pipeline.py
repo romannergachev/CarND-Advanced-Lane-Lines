@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 
-def __abs_sobel_thresh(img, orient='x', sobel_kernel=3, thresh=(30, 150)):
+def __abs_sobel_thresh(img, orient='x', sobel_kernel=3, thresh=(20, 250)):
     """
                          Performs sobel transform of the image
 
@@ -61,26 +61,26 @@ def __dir_threshold(img, sobel_kernel=15, thresh=(0.7, 1.3)):
 
     sobel_x = np.absolute(cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=sobel_kernel))
     sobel_y = np.absolute(cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=sobel_kernel))
-    # 4) Use np.arctan2(abs_sobely, abs_sobelx) to calculate the direction of the gradient
+
     direction = np.arctan2(sobel_y, sobel_x)
-    # 5) Create a binary mask where direction thresholds are met
+
     mask = np.zeros_like(direction)
     mask[(direction > thresh[0]) & (direction < thresh[1])] = 1
-    # 6) Return this mask as your binary_output image
-    binary_output = mask  # Remove this line
-    return binary_output
+
+    return mask
 
 
-def transform_image(input_image, s_thresh=(100, 255)):
+def transform_image(input_image, s_thresh=(100, 255), l_thresh=(120, 255)):
     """
-                      Applies transformation pipeline to the initial image
+                        Applies transformation pipeline to the initial image
 
     :param input_image: image to apply transformation pipeline
     :param s_thresh:    threshold for s color space
+    :param l_thresh:    threshold for l color space
     :return:            transformed image
     """
     img = np.copy(input_image)
-    # Convert to HSV color space and separate the V channel
+
     hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HLS).astype(np.float)
     l_channel = hsv[:, :, 1]
     s_channel = hsv[:, :, 2]
@@ -93,50 +93,31 @@ def transform_image(input_image, s_thresh=(100, 255)):
     combined = np.zeros_like(dir_binary)
     combined[((gradx == 1) & (grady == 1)) | ((mag_binary == 1) & (dir_binary == 1))] = 1
 
-    # Threshold color channel
     s_binary = np.zeros_like(s_channel)
     s_binary[(s_channel >= s_thresh[0]) & (s_channel <= s_thresh[1])] = 1
 
-    # Stack each channel
-    # Note color_binary[:, :, 0] is all 0s, effectively an all black image. It might
-    # be beneficial to replace this channel with something else.
-    color_binary = np.dstack((np.zeros_like(combined), combined, s_binary))
+    l_binary = np.zeros_like(l_channel)
+    l_thresh_min = l_thresh[0]
+    l_thresh_max = l_thresh[1]
+    l_binary[(l_channel >= l_thresh_min) & (l_channel <= l_thresh_max)] = 1
 
     combined_binary = np.zeros_like(combined)
-    combined_binary[(combined == 1) | (s_binary == 1)] = 1
+    combined_binary[(combined == 1) | ((s_binary == 1) & (l_binary == 1))] = 1
     binary = combined_binary.astype(np.uint8)
-    return region_of_interest(binary, mask_vertices(binary))
+
+    return __binary_noise_filtering(binary)
 
 
-def mask_vertices(image):
-    """Applies mask over image"""
-    size = image.shape
-    LEFT_BOTTOM = (145, 720)
-    LEFT_TOP = (500, 447)
-    RIGHT_TOP = (783, 447)
-    RIGHT_BOTTOM = (1178, 720)
-
-    vertices2 = np.array([[(145, 720), (500, 347),
-                           (783, 347),
-                           (1178, 720)]], dtype=np.int32)
-    return vertices2
-
-
-def region_of_interest(img, vertices):
-    """Applies an image mask formed by the vertices."""
-    # defining a blank mask to start with
-    mask = np.zeros_like(img)
-
-    # defining a 3 channel or 1 channel color to fill the mask with depending on the input image
-    if len(img.shape) > 2:
-        channel_count = img.shape[2]  # i.e. 3 or 4 depending on your image
-        ignore_mask_color = (255,) * channel_count
-    else:
-        ignore_mask_color = 255
-
-    # filling pixels inside the polygon defined by "vertices" with the fill color
-    cv2.fillPoly(mask, vertices, ignore_mask_color)
-
-    # returning the image only where mask pixels are nonzero
-    masked_image = cv2.bitwise_and(img, mask)
-    return masked_image
+def __binary_noise_filtering(img, thresh=4):
+    """
+                   Filters noise
+    :param img:    binary image
+    :param thresh: threshold of neighbours
+    :return:       image
+    """
+    k = np.array([[1, 1, 1],
+                  [1, 0, 1],
+                  [1, 1, 1]])
+    nb_neighbours = cv2.filter2D(img, ddepth=-1, kernel=k)
+    img[nb_neighbours < thresh] = 0
+    return img
