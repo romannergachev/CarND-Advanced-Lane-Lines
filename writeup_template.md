@@ -1,11 +1,6 @@
-##Writeup Template
-###You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
+##Advanced Lane Finding Project
 
----
-
-**Advanced Lane Finding Project**
-
-The goals / steps of this project are the following:
+The steps of this project are the following:
 
 * Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
 * Apply a distortion correction to raw images.
@@ -19,11 +14,11 @@ The goals / steps of this project are the following:
 [//]: # (Image References)
 
 [image1]: ./output_images/1_undistorting.png "Undistorted"
-[image2]: ./output_images/2.2_undistorting_test2.jpg "Road Transformed"
-[image3]: ./output_images/3.1_transformed_test.jpg "Binary Example"
-[image4]: ./output_images/4.4_transformed_test5.jpg "Warp Example"
-[image5]: ./output_images/5.4_draw_lanes.jpg "Fit Visual"
-[image6]: ./output_images/9_fully_masked.jpg "Output"
+[image2]: ./output_images/2.2_undistorting_test2.png "Road Transformed"
+[image3]: ./output_images/3.1_transformed_test.png "Binary Example"
+[image4]: ./output_images/4.4_transformed_test5.png "Warp Example"
+[image5]: ./output_images/5.4_draw_lanes.png "Fit Visual"
+[image6]: ./output_images/9_fully_masked.png "Output"
 [video1]: ./project_video_annotated.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
@@ -34,9 +29,10 @@ The goals / steps of this project are the following:
 
 ####1. Compute camera matrix and distortion coefficients.
 
-The code for this step is contained in lines #24 through #90 of the file called `camera.py`).  
+The code for this step is contained in lines #24 through #90 of the file called `camera.py`.  
 
 I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.
+
 I used images from the camera_cal directory to get enough data for camera calibration after that I've used `objpoints` and `imgpoints` to computed the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.
 After that using camera matrix and dustirtion coefficients I've used `cv2.undistort()` and obtained this result: 
 
@@ -55,8 +51,9 @@ I used a combination of color and gradient thresholds to generate a binary image
 ####3. Perspective transform with example.
 
 The code for my perspective transform includes a function called `warp()`, which appears in lines #98 through #114 in the file `camera.py`.  The `warp()` function takes as inputs an image (`img`), as well as direction of warp (straight or inverse) (`invert`) and uses predefined `src` and `dst` constants.  
-I chose the hardcode the source and destination points in lines #5 to #19 `camera.py`.
-I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
+I have hardcoded the source and destination points in lines #5 to #19 `camera.py`.
+
+I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image:
 
 ![alt text][image4]
 
@@ -74,7 +71,7 @@ I did this in lines #247 through #263 `__calculate_curvature()` in my code in `l
 
 ####6. Result.
 
-I implemented this step in lines #9 through #38 in my code in `video_pipeline.py` in the function `detection_pipeline()`.  Here is an example of my result on a test image:
+I implemented this steps in lines #9 through #38 in my code in `video_pipeline.py` in the function `detection_pipeline()`.  Here is an example of my result on a test image:
 
 ![alt text][image6]
 
