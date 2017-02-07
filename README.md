@@ -1,19 +1,9 @@
-## Advanced Lane Finding
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+##Writeup Template
+###You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
 
-
-In this project, your goal is to write a software pipeline to identify the lane boundaries in a video, but the main output or product we want you to create is a detailed writeup of the project.  Check out the [writeup template](https://github.com/udacity/CarND-Advanced-Lane-Lines/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup.  
-
-Creating a great writeup:
 ---
-A great writeup should include the rubric points as well as your description of how you addressed each point.  You should include a detailed description of the code used in each step (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
 
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup.
-
-The Project
----
+**Advanced Lane Finding Project**
 
 The goals / steps of this project are the following:
 
@@ -26,8 +16,92 @@ The goals / steps of this project are the following:
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
-The images for camera calibration are stored in the folder called `camera_cal`.  The images in `test_images` are for testing your pipeline on single frames.  To help the reviewer examine your work, please save examples of the output from each stage of your pipeline in the folder called `ouput_images`, and include a description in your writeup for the project of what each image shows.    The video called `project_video.mp4` is the video your pipeline should work well on.  
+[//]: # (Image References)
 
-The `challenge_video.mp4` video is an extra (and optional) challenge for you if you want to test your pipeline under somewhat trickier conditions.  The `harder_challenge.mp4` video is another optional challenge and is brutal!
+[image1]: ./output_images/1_undistorting.png "Undistorted"
+[image2]: ./output_images/2.2_undistorting_test2.jpg "Road Transformed"
+[image3]: ./output_images/3.1_transformed_test.jpg "Binary Example"
+[image4]: ./output_images/4.4_transformed_test5.jpg "Warp Example"
+[image5]: ./output_images/5.4_draw_lanes.jpg "Fit Visual"
+[image6]: ./output_images/9_fully_masked.jpg "Output"
+[video1]: ./project_video_annotated.mp4 "Video"
 
-If you're feeling ambitious (again, totally optional though), don't stop there!  We encourage you to go out and take video of your own, calibrate your camera and show us how you would implement this project from scratch!
+## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
+###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
+
+---
+###Camera Calibration
+
+####1. Compute camera matrix and distortion coefficients.
+
+The code for this step is contained in lines #24 through #90 of the file called `camera.py`).  
+
+I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.
+I used images from the camera_cal directory to get enough data for camera calibration after that I've used `objpoints` and `imgpoints` to computed the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.
+After that using camera matrix and dustirtion coefficients I've used `cv2.undistort()` and obtained this result: 
+
+![alt text][image1]
+
+###Pipeline (single images)
+
+####1. Distortion-corrected image.
+To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
+![alt text][image2]
+####2. Usage of color transforms, gradients or other methods to create a thresholded binary image.
+I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines #7 through #123 in `transformation_pipeline.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+
+![alt text][image3]
+
+####3. Perspective transform with example.
+
+The code for my perspective transform includes a function called `warp()`, which appears in lines #98 through #114 in the file `camera.py`.  The `warp()` function takes as inputs an image (`img`), as well as direction of warp (straight or inverse) (`invert`) and uses predefined `src` and `dst` constants.  
+I chose the hardcode the source and destination points in lines #5 to #19 `camera.py`.
+I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
+
+![alt text][image4]
+
+####4. Lane-line pixels identification and their fitting their using a polynomial
+
+Then I used suggested method of finding peaks in a Histogram to search for the lane line pixels and moved over the image to detect the whole line with Sliding Windows. After that I've fitted the result to the polynomial and got the actual lane line.
+
+You can find the basic sliding windows search in `lane.py` lines #127 to #203.
+
+![alt text][image5]
+
+####5. Radius of curvature of the lane and the position of the vehicle with respect to center calculation.
+
+I did this in lines #247 through #263 `__calculate_curvature()` in my code in `lane.py` and regarding the vehicle position and center - lines #340 through #367 `add_info()` in my code in `lane.py`
+
+####6. Result.
+
+I implemented this step in lines #9 through #38 in my code in `video_pipeline.py` in the function `detection_pipeline()`.  Here is an example of my result on a test image:
+
+![alt text][image6]
+
+---
+
+###Pipeline (video)
+
+####1. Result video.
+
+Here's a [link to my video result](./project_video_annotated.mp4)
+
+I've modified the general pipeline to call the `detect_lane()` method lines #81 to #125 (`lane.py`) that actually decides whether to use blind search (via sliding windows) or targeted search by previous known position lines #205 to #245 `__continuously_detect()`.
+
+Also I've used `__check_line()` method (#265 to #297 same file) to check the new line is the right one.
+
+
+---
+
+###Discussion
+
+####1. Problems and Issues
+
+First of all, I would like to say that the current recognition algorithm should be improved (since not every line is actually recoginisable and if the road has 'fake' lines it can fail).
+Second of all, from the detection perspective - it's better to implement the algorithm that would count not only the lanes itself drawn on the road (they could be missing actually), but all the other conditions:
+- Road width itself (by using the standard lane size we can get the number of lanes per road and calculate our desired position)
+- Positions of other vehicles on the road could help us identify the lanes
+- Maybe also use data from the internet to decide on quantity of lanes on the road
+
+In the end I would like to say that visual recognition of lanes is important, but in practice - it's not enough. We need to use combination of different methods of lane calculation.
+
