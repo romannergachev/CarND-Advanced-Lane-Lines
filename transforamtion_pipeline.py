@@ -49,6 +49,26 @@ def __mag_thresh(img, sobel_kernel=3, mag_thresh=(40, 100)):
     return mask
 
 
+def __color_thresholding(img, binary):
+    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+
+    # For yellow
+    yellow = cv2.inRange(hsv, (20, 100, 100), (50, 255, 255))
+
+    # For white
+    sensitivity_1 = 68
+    white = cv2.inRange(hsv, (0, 0, 255 - sensitivity_1), (255, 20, 255))
+
+    sensitivity_2 = 60
+    hsl = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
+    white_2 = cv2.inRange(hsl, (0, 255 - sensitivity_2, 0), (255, 255, sensitivity_2))
+    white_3 = cv2.inRange(img, (200, 200, 200), (255, 255, 255))
+
+    bit_layer = binary | yellow | white | white_2 | white_3
+
+    return bit_layer
+
+
 def __dir_threshold(img, sobel_kernel=15, thresh=(0.7, 1.3)):
     """
                          Performs sobel direction transform
@@ -104,8 +124,9 @@ def transform_image(input_image, s_thresh=(100, 255), l_thresh=(120, 255)):
     combined_binary = np.zeros_like(combined)
     combined_binary[(combined == 1) | ((s_binary == 1) & (l_binary == 1))] = 1
     binary = combined_binary.astype(np.uint8)
+    result_binary = __color_thresholding(img, binary)
 
-    return __binary_noise_filtering(binary)
+    return __binary_noise_filtering(result_binary)
 
 
 def __binary_noise_filtering(img, thresh=4):
